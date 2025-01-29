@@ -32,3 +32,4 @@ const newUser = new user({
     gender,
     profilePic:gender === "male" ? boyProfilePic : girlProfilePic,
 });
+console.log(newUser,'jbjhjh');
