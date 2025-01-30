@@ -1,6 +1,6 @@
 import user from "../model/userModel.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+
 
 export const signup = async (req, res) => {
     try {
@@ -11,14 +11,14 @@ export const signup = async (req, res) => {
     if (password !== confirm_password) {
         return res.status(400).json({ message: 'Passwords do not match' });
     }
-    console.log('working');}
-};
+   
+
 
 const existingUser = await user.findOne({username });
 if (existingUser) {
     return res.status(400).json({ message: 'username already in use' });
 }
-console.log(existingUser);
+console.log(existingUser, 'existing user');
 const hashedPassword = await bcrypt.hash(password, 10);
 console.log(hashedPassword);
 const boyProfilePic =`https://avatar.iran.liara.run/public/boy?username=${username}`;
@@ -32,4 +32,18 @@ const newUser = new user({
     gender,
     profilePic:gender === "male" ? boyProfilePic : girlProfilePic,
 });
-console.log(newUser,'jbjhjh');
+console.log(newUser,);
+await newUser.save();
+// res.status(201).json({ message: 'User registered successfully!' });
+res.redirect('/user/home');
+
+}catch (error) {
+    res.status(500).json({ message: 'Error registering user', error });
+}
+}
+
+export const RenderHome = async (req,res) =>{
+    res.render('home')
+
+}
+
