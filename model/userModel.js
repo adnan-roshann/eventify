@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema({
   googleid: { type: String, unique: true },
   isVerified: { type: Boolean, default: false },
   avatar: { type: String },
+  otp: String,              // For OTP verification
+  otpExpiresAt: Date
 
 })
 

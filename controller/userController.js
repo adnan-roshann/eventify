@@ -2,6 +2,7 @@ import user from "../model/userModel.js";
 import bcrypt from "bcrypt";
 
 
+
 // export const signup = async (req, res) => {
 //     try {
 //     const { name, email, password,gender} = req.body;
@@ -82,4 +83,10 @@ console.log(hashedPassword);
     res.render('home')
 
 }
+
+
+
+
+// ----------------------------------------------------------------------------------------------
+
 
