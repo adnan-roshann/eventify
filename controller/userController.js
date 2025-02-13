@@ -1,5 +1,6 @@
 import user from "../model/userModel.js";
 import bcrypt from "bcrypt";
+import nodemailer from 'nodemailer';
 
 
 
@@ -47,53 +48,24 @@ import bcrypt from "bcrypt";
 
 // ------------------------------------------------------------------------------
 
-// const avatars = {
-//     Male: 'https://avatar.iran.liara.run/public/boy',
-//     Female: 'https://avatar.iran.liara.run/public/girl'
-//   };
-  
-//   export const signup = async (req, res) => {
-//     const { name, email, password, gender } = req.body;
-
-//     const existingUser = await user.findOne({email });
-// if (existingUser) {
-//     return res.status(400).json({ message: 'email already in use' });
-// }
-// console.log(existingUser, 'existing user');
-// const hashedPassword = await bcrypt.hash(password, 10);
-// console.log(hashedPassword);
-// //   ..............................................................
-//     try {
-//       const avatar = avatars[gender] ;
-//       const user = new User({
-//          name,
-//           email,
-//           password: hashedPassword,
-//             gender,
-//              avatar });
-    
-//              await User.save();
-//              // res.status(201).json({ message: 'User registered successfully!' });
-//              res.redirect('/user/home');
-//     } catch (err) {
-//       res.status(400).send('Error registering user');
- // Deprecated and incorrect
-//     }
-//   };
-//   export const RenderHome = async (req,res) =>{
-//     res.render('home')
-
-// }
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,  // Use an App Password (not your actual password)
+  }
+});
 
 
+// Function to Generate 6-Digit OTP
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 
-// ----------------------------------------------------------------------------------------------
 
 
 
 export const signup = async (req, res) => {
-  const { name, email, password, gender } = req.body;
+  const { name, email, password, gender, googleid } = req.body;
 
   if (!name || !email || !password || !gender) {
     return res.status(400).json({ error: 'All fields are required.' });
@@ -107,8 +79,10 @@ export const signup = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log(hashedPassword);
+    const otp = generateOTP();
 
-    // ✅ Avatar selection based on gender
+
+    //  Avatar selection based on gender
     let avatarURL;
     if (gender === "male") {
       avatarURL = "https://avatar.iran.liara.run/public/41";
@@ -124,12 +98,25 @@ export const signup = async (req, res) => {
       email,
       password: hashedPassword,
       gender,
-      avatar: avatarURL, // Corrected here
+      avatar: avatarURL,
+      otp,
+      isVerified: false,
+      googleid: googleid || undefined
     });
 
     await newUser.save();
 
-    return res.redirect('/user/home');
+    const mailOptions = {
+      from: 'your-email@gmail.com',
+      to: email,
+      subject: 'Verify Your Email - OTP Code',
+      text: `Your OTP for verification is: ${otp}`
+  };
+
+  await transporter.sendMail(mailOptions);
+
+
+    return res.redirect('/user/landing');
 
   } catch (err) {
     console.error('Signup error:', err);
@@ -141,4 +128,35 @@ export const signup = async (req, res) => {
   export const RenderHome = async (req,res) =>{
     res.render('home')
   }
+
+
+ 
+  export const verifyOTP = async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        return res.status(400).json({ error: 'Email and OTP are required.' });
+    }
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ error: 'User not found.' });
+        }
+
+        if (user.otp !== otp) {
+            return res.status(400).json({ error: 'Invalid OTP.' });
+        }
+
+        user.isVerified = true;
+        user.otp = null; // Clear OTP after successful verification
+        await user.save();
+
+        return res.status(200).json({ message: 'Email verified successfully.' });
+
+    } catch (err) {
+        console.error('OTP verification error:', err);
+        return res.status(500).json({ error: 'Error verifying OTP' });
+    }
+};
 

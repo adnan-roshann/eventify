@@ -1,14 +1,23 @@
 import express from "express";
-import { signup,RenderHome} from "../controller/userController.js";
-import { googleAuth, googleAuthCallback } from '../controller/authController.js'
+import { signup,RenderHome,verifyOTP} from "../controller/userController.js";
+import passport from 'passport';
 
 
 
 const router = express.Router();
+
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.post('/signup', signup);
 router.get("/home",RenderHome);
-router.get('/auth/google', googleAuth);
-router.get('/auth/google/callback', googleAuthCallback);
+router.post('/verify-otp', verifyOTP); 
+
+router.get('/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    res.redirect('/user/home'); // Redirect after successful login
+  }
+);
+
 
 
 export default router;
